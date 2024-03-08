@@ -11,27 +11,30 @@ from PIL import Image, ImageChops
 from pytesseract import pytesseract
 from PyPDF2 import PdfReader
 
-def getHighlightedText(highlighted, output, fromPage, toPage, scale, psm, pauseDiffs):
+def getHighlightedText(highlighted, output, start, end, psm, numbering, display, blanks):
 
     #path_to_tesseract = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
-    #pytesseract.tesseract_cmd = path_to_tesseract 
+    #pytesseract.tesseract_cmd = path_to_tesseract
 
-    if fromPage != 0:
-        fromPage -= 1
+    if start != 0 and numbering == 1:
+        start -= 1
 
+    scale = 5
     mat = fitz.Matrix(scale, scale)
 
     highlightedPages = fitz.open(highlighted)
 
-    for i in range(fromPage, toPage):
-
+    for i in range(start + (numbering - 1), end):
         highlightedPage = highlightedPages.load_page(i)
         highlightedPix = highlightedPage.get_pixmap(matrix=mat)
         highlightedPix.save('highlightedPage.jpg')
 
         img = cv2.imread('highlightedPage.jpg')
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, (0, 140, 200), (255, 200, 255))
+        
+        pinkRange = [(0, 140, 200), (255, 200, 255)]
+
+        mask = cv2.inRange(hsv, pinkRange[0], pinkRange[1])
         target = cv2.bitwise_and(img, img, mask=mask)
         diff = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
 
@@ -54,8 +57,6 @@ def getHighlightedText(highlighted, output, fromPage, toPage, scale, psm, pauseD
 
             if index != 0:
                 previousY = contourBounds[index - 1][1]
-                print(y)
-                print(previousY)
                 if previousY == y:
                     text += " "
                 else:
@@ -72,37 +73,41 @@ def getHighlightedText(highlighted, output, fromPage, toPage, scale, psm, pauseD
                 file.writelines(["\n# PAGE " + str(i + 1) + "\n\n"])
                 file.writelines([text])
                 file.write("")
+           
+            os.remove('highlightedPage.jpg')
 
-        cv2.imshow('image', img)
-        cv2.waitKey(0)
+            if display:
+                cv2.imshow('image', img)
+                cv2.waitKey(0)
+
+        else:
+            if display and blanks:
+                cv2.imshow('image', img)
+                cv2.waitKey(0)
 
     highlightedPages.close()
 
-    os.remove('highlightedPage.jpg')
-    if not saveDiffs:
-        os.remove('diff.jpg')
-
 def main(args):
 
-    toPage = args.toPage
+    end = args.end
 
-    if toPage == 0:
-        
+    if end == 0:
         reader = PdfReader(args.highlighted)
-        toPage = len(reader.pages)
+        end = len(reader.pages)
 
-    getHighlightedText(args.highlighted, args.output, args.fromPage, toPage, args.scale, args.psm, args.diff)
+    getHighlightedText(args.highlighted, args.output, args.start, end, args.psm, args.numbering, args.display, args.blanks)
 
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description="Extract highlights from a ReMarkable PDF.")
     parser.add_argument('highlighted', help="path of highlighted PDF")
     parser.add_argument('output', help="path of output file")
-    parser.add_argument('-s', '--scale', help="scale of the fitz matrix", default=5)
     parser.add_argument('-p', '--psm', help="psm for pytesseract to use", default=6)
-    parser.add_argument('-f', '--fromPage', help="extraction starting page", default=0, type=int)
-    parser.add_argument('-t', '--toPage', help="extraction ending page", default=0, type=int)
-    parser.add_argument('-d', '--diff', help="display the image of the diff between the original and highlighted images", default=True)
+    parser.add_argument('-s', '--start', help="extraction starting page", default=0, type=int)
+    parser.add_argument('-e', '--end', help="extraction ending page", default=0, type=int)
+    parser.add_argument('-n', '--numbering', help="the page relative to the PDF file where the page numbering actually starts at 1", default=1, type=int)
+    parser.add_argument('-d', '--display', help="display the image of the page", action='store_true')
+    parser.add_argument('-b', '--blanks', help="display the image of the page even if no highlights were detected", action='store_true')
 
     args = parser.parse_args()
     return args
