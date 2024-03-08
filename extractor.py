@@ -34,8 +34,23 @@ def getHighlightedText(highlighted, output, fromPage, toPage, scale, psm, pauseD
         target = cv2.bitwise_and(img, img, mask=mask)
         diff = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
 
-        text = pytesseract.image_to_string(diff, config='--psm ' + str(psm))
-        text = text[:-1]
+        contours, _ = cv2.findContours(diff, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+        contourBounds = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            if w > 75:
+                contourBounds.append((x, y, w, h))
+
+        contourBounds = sorted(contourBounds, key=lambda val: (val[1], val[0]))
+
+        text = ""
+        for bound in contourBounds:
+            x = bound[0]
+            y = bound[1]
+            w = bound[2]
+            h = bound[3]
+            text += pytesseract.image_to_string(diff[y:y+h, x:x+w], config='--psm ' + str(psm))[:-1]
         
         if text != "":
             with open(output, 'a') as file:
@@ -43,8 +58,7 @@ def getHighlightedText(highlighted, output, fromPage, toPage, scale, psm, pauseD
                 file.writelines([text])
                 file.write("")
 
-        shownImage = cv2.imread('highlightedPage.jpg')
-        cv2.imshow('image', shownImage)
+        cv2.imshow('image', img)
         cv2.waitKey(0)
 
     highlightedPages.close()
