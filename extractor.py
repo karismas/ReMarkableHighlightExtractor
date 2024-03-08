@@ -3,6 +3,7 @@ import sys
 import argparse
 
 import numpy as np
+from math import isclose
 
 import cv2
 import fitz
@@ -45,11 +46,25 @@ def getHighlightedText(highlighted, output, fromPage, toPage, scale, psm, pauseD
         contourBounds = sorted(contourBounds, key=lambda val: (val[1], val[0]))
 
         text = ""
-        for bound in contourBounds:
+        for (index, bound) in enumerate(contourBounds):
             x = bound[0]
             y = bound[1]
             w = bound[2]
             h = bound[3]
+
+            if index != 0:
+                previousY = contourBounds[index - 1][1]
+                print(y)
+                print(previousY)
+                if previousY == y:
+                    text += " "
+                else:
+                    previousH = contourBounds[index - 1][3]
+                    if y - (previousY + previousH) > h:
+                        text += "\n\n"
+                    else:
+                        text += " "
+
             text += pytesseract.image_to_string(diff[y:y+h, x:x+w], config='--psm ' + str(psm))[:-1]
         
         if text != "":
