@@ -7,14 +7,14 @@ Most of these methods worked flawlessly for older versions, but the most recent 
 
 This project aims to solve this problem for good.
 
-In order to use this extractor, you must have two copies of the PDF in the same directory as this cloned repository:
-- The original PDF
-- The highlighted PDF
+In order to use this extractor, all you need is a copy of the highlighted PDF from your ReMarkable tablet.
 
 The highlighted PDF can be exported through two methods (that I know of):
-1. Using the ReMarkable application, right click on the PDF and choose "Export" with the file format as PDF. However, PDFs will stop syncing through ReMarkable Connect after a certain amount of time, so this method may not be entirely feasible.
-2. Using the reMarkable Connection Utilty (RCU) (can be bought for $12 at http://www.davisr.me/projects/rcu/), left click the PDF and press the "Export PDF" drop-down arrow at the bottom of the application. When the options pop up, make sure to check the "Annotated PDF" box and select "Export PDF (Web UI)". If this button is grayed out, make sure your tablet is directly connected with the cable and that the "USB web interface" slider is enabled (can be found at Menu -> Settings -> Storage on the tablet).
+1. Using the ReMarkable application, right click on the PDF and choose "Export" with the file format as PDF. Keep in mind that if you don't have a ReMarkable Connect subscription and you haven't opened/synced the PDF in 50 days it will stop syncing entirely. If this happens you can probably just export the file and re-upload it.
+2. Using the reMarkable Connection Utility (RCU) (can be bought for $12 at http://www.davisr.me/projects/rcu/), left click the PDF and press the "Export PDF" drop-down arrow at the bottom of the application. When the options pop up, make sure to check the "Annotated PDF" box and select "Export PDF (Web UI)". If this button is grayed out, make sure your tablet is directly connected with the cable and that the "USB web interface" slider is enabled (can be found at Menu -> Settings -> Storage on the tablet).
 
-The extraction works by converting each page within the specified range into an image and then comparing the two images. If the page has highlights, the hightlighted text should be the only thing remaining after the comparison. At this point, the extractor attempts to read the text and enter it into a .txt file. This process is slow, but should be guaranteed to work regardless of ReMarkable version. (Do not be surprised if the text is not perfectly extracted, there are a lot of ways it can get it wrong)
+The extraction works by converting each page within the specified range into an image and then searching for regions that have ReMarkable highlight colors (as of now, **only pink is supported**). Each different section of highlights are enclosed in a box and cropped into a separate image. Once they're separated, the text can be easily read and exported to a file as plaintext, although you can specify any file extension you want (.md, etc.). This process is somewhat slow, but should be guaranteed to work regardless of ReMarkable version. Do not be surprised if the text is not perfectly extracted; some PDFs might have lines close enough to cause their highlights to overlap and cause unintended consequences.
 
-Once both PDFs have been placed in the home directory, run the python code from the terminal and let the magic happen.
+You can let the program run in the background and choose to trust the output, or only let it run page by page and observe/fix any formatting while it runs. One you're content, you can hit "Enter" and it will show the next page. I personally like to use this method with Obsidian so I can alternate between extracting highlights and then formatting the text at the same time.
+
+Once the PDF has been placed in the home directory, run the python code from the terminal and let the magic happen.
